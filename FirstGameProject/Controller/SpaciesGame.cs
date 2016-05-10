@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Storage;
 using Microsoft.Xna.Framework.Input;
+using FirstGameProject.Model;
 
 namespace FirstGameProject.Controller
 {
@@ -12,8 +13,9 @@ namespace FirstGameProject.Controller
 	/// </summary>
 	public class SpaciesGame : Game
 	{
-		GraphicsDeviceManager graphics;
-		SpriteBatch spriteBatch;
+		private GraphicsDeviceManager graphics;
+		private SpriteBatch spriteBatch;
+		private Player player;
 
 		public SpaciesGame ()
 		{
@@ -30,7 +32,7 @@ namespace FirstGameProject.Controller
 		protected override void Initialize ()
 		{
 			// TODO: Add your initialization logic here
-            
+			player = new Player();
 			base.Initialize ();
 		}
 
