@@ -13,7 +13,7 @@ using UIKit;
 #endif
 #endregion
 
-namespace FirstGameProject
+namespace FirstGameProject.Controller
 {
 	#if __IOS__ || __TVOS__
     [Register("AppDelegate")]
