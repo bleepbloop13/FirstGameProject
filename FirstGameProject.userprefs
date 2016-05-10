@@ -1,1 +1,13 @@
-﻿<Properties StartupItem="FirstGameProject/FirstGameProject.csproj" />
+﻿<Properties StartupItem="FirstGameProject/FirstGameProject.csproj">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="FirstGameProject/Controller/SpaciesGame.cs">
+    <Files>
+      <File FileName="FirstGameProject/Controller/SpaciesGame.cs" Line="50" Column="4" />
+      <File FileName="FirstGameProject/Model/Player.cs" Line="7" Column="21" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+</Properties>
