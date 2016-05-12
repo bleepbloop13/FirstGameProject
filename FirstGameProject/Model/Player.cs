@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using FirstGameProject.View.Animation;
 
 namespace FirstGameProject.Model
 {
@@ -9,11 +10,20 @@ namespace FirstGameProject.Model
 		private int score;
 		private bool active;
 		private int health;
+		private Animation playerAnimation;
+
 		// Animation representing the player
-		public Texture2D PlayerTexture;
+		public Texture2D PlayerTexture
+		{
+			get{ return playerAnimation; }
+			set{ playerAnimation = value; }
+		}
 
 		// Position of the Player relative to the upper left side of the screen
 		public Vector2 Position;
+
+		// Animation representing the player
+		public Animation PlayerAnimation;
 
 		// State of the player
 		public bool Active 
