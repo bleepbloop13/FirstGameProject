@@ -3,7 +3,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace FirstGameProject
+namespace FirstGameProject.View
 {
 	public class Animation
 	{
@@ -135,8 +135,13 @@ namespace FirstGameProject
 				(int)(FrameWidth * scale),
 				(int)(FrameHeight * scale));
 		}
-		public void Draw()
+		public void Draw(SpriteBatch spriteBatch)
 		{
+			// Only draw the animation when we are active
+			if (Active)
+			{
+				spriteBatch.Draw(spriteStrip, destinationRect, sourceRect, color);
+			}
 		}
 	}
 }
