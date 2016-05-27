@@ -4,7 +4,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace FirstGameProject
 {
-	public class Projectile
+	public class Fireball
 	{
 		private Texture2D texture;
 		// Image representing the Projectile
@@ -37,7 +37,7 @@ namespace FirstGameProject
 			get{ return damage; }
 			set{ damage = value; }
 		}
-			
+
 		// Represents the viewable boundary of the game
 		private Viewport viewport;
 
@@ -65,14 +65,16 @@ namespace FirstGameProject
 
 			this.active = true;
 
-			this.damage = 2;
+			this.damage = 5;
 
-			projectileMoveSpeed = 20f;
+			projectileMoveSpeed = 15f;
 		}
 		public void Update()
 		{
 			// Projectiles always move to the right
 			position.X += projectileMoveSpeed;
+
+			position.Y += (float)Math.Sin(projectileMoveSpeed)*5;
 
 			// Deactivate the bullet if it goes out of screen
 			if (Position.X + Texture.Width / 2 > viewport.Width)

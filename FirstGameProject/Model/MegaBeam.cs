@@ -4,7 +4,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace FirstGameProject
 {
-	public class Projectile
+	public class MegaBeam
 	{
 		private Texture2D texture;
 		// Image representing the Projectile
@@ -37,7 +37,7 @@ namespace FirstGameProject
 			get{ return damage; }
 			set{ damage = value; }
 		}
-			
+
 		// Represents the viewable boundary of the game
 		private Viewport viewport;
 
@@ -65,7 +65,7 @@ namespace FirstGameProject
 
 			this.active = true;
 
-			this.damage = 2;
+			this.damage = 20;
 
 			projectileMoveSpeed = 20f;
 		}
@@ -80,7 +80,7 @@ namespace FirstGameProject
 		}
 		public void Draw(SpriteBatch spriteBatch)
 		{
-			spriteBatch.Draw(Texture, Position, null, Color.White, 0f,
+			spriteBatch.Draw(Texture, Position, null, Color.Red, 0f,
 				new Vector2(Width / 2, Height / 2), 1f, SpriteEffects.None, 0f);
 		}
 	}

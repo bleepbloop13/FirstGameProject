@@ -7,6 +7,8 @@ using Microsoft.Xna.Framework.Input;
 using FirstGameProject.Model;
 using FirstGameProject.View;
 using System.Collections.Generic;
+using Microsoft.Xna.Framework.Audio;
+using Microsoft.Xna.Framework.Media;
 
 namespace FirstGameProject.Controller
 {
@@ -51,9 +53,36 @@ namespace FirstGameProject.Controller
 		private Texture2D projectileTexture;
 		private List<Projectile> projectiles;
 
+		private Texture2D fireballTexture;
+		private List<Fireball> fireballs;
+
 		// The rate of fire of the player laser
-		private TimeSpan fireTime;
-		private TimeSpan previousFireTime;
+		private TimeSpan laserFireTime;
+		private TimeSpan previousLaserFireTime;
+
+		private TimeSpan fireballFireTime;
+		private TimeSpan previousFireballFireTime;
+
+		private Texture2D beamTexture;
+		private List<MegaBeam> beams;
+
+		private Texture2D explosionTexture;
+		private List<Animation> explosions;
+
+		// The sound that is played when a laser is fired
+		private SoundEffect laserSound;
+
+		// The sound used when the player or an enemy dies
+		private SoundEffect explosionSound;
+
+		// The music played during gameplay
+		private Song gameplayMusic;
+
+		//Number that holds the player score
+		private int score;
+
+		// The font used to display UI elements
+		private SpriteFont font;
 
 		public SpaciesGame ()
 		{
@@ -74,9 +103,14 @@ namespace FirstGameProject.Controller
 			bgLayer1 = new ParallaxingBackground();
 			bgLayer2 = new ParallaxingBackground();
 			projectiles = new List<Projectile>();
+			fireballs = new List<Fireball> ();
+			beams = new List<MegaBeam> ();
 
 			// Set the laser to fire every quarter second
-			fireTime = TimeSpan.FromSeconds(.15f);
+			laserFireTime = TimeSpan.FromSeconds(.15f);
+
+			fireballFireTime = TimeSpan.FromSeconds (.30f);
+
 			// Initialize the enemies list
 			enemies = new List<Enemy> ();
 
@@ -85,6 +119,11 @@ namespace FirstGameProject.Controller
 
 			// Used to determine how fast enemy respawns
 			enemySpawnTime = TimeSpan.FromSeconds(1.0f);
+
+			explosions = new List<Animation>();
+
+			//Set player's score to zero
+			score = 0;
 
 			// Initialize our random number generator
 			random = new Random();
@@ -115,6 +154,20 @@ namespace FirstGameProject.Controller
 			bgLayer2.Initialize(Content, "Texture/bgLayer2", GraphicsDevice.Viewport.Width, -2);
 			enemyTexture = Content.Load<Texture2D>("Animation/mineAnimation");
 			projectileTexture = Content.Load<Texture2D>("Texture/laser");
+			explosionTexture = Content.Load<Texture2D>("Animation/explosion");
+			fireballTexture = Content.Load<Texture2D> ("Texture/fireball");
+			beamTexture = projectileTexture;
+			// Load the music
+			gameplayMusic = Content.Load<Song>("Sound/gameMusic");
+
+			// Load the laser and explosion sound effect
+			laserSound = Content.Load<SoundEffect>("Sound/laserFire");
+			explosionSound = Content.Load<SoundEffect>("Sound/explosion");
+
+			// Start the music right away
+			PlayMusic(gameplayMusic);
+			// Load the score font
+			font = Content.Load<SpriteFont>("Font/gameFont");
 			mainBackground = Content.Load<Texture2D>("Texture/mainbackground");
 		}
 
@@ -158,8 +211,50 @@ namespace FirstGameProject.Controller
 			// Update the projectiles
 			UpdateProjectiles();
 
+			// Update the fireballs
+			UpdateFireballs();
+
+			// Update the mega beam
+			UpdateBeams();
+
+			// Update the explosions
+			UpdateExplosions(gameTime);
+
 			base.Update (gameTime);
 		}
+		private void UpdateEnemies(GameTime gameTime)
+		{
+			// Spawn a new enemy enemy every 1.5 seconds
+			if (gameTime.TotalGameTime - previousSpawnTime > enemySpawnTime) 
+			{
+				previousSpawnTime = gameTime.TotalGameTime;
+
+				// Add an Enemy
+				AddEnemy();
+			}
+
+			// Update the Enemies
+			for (int i = enemies.Count - 1; i >= 0; i--) 
+			{
+				enemies[i].Update(gameTime);
+
+				if (enemies[i].Active == false)
+				{
+					// If not active and health <= 0
+					if (enemies[i].Health <= 0)
+					{
+						// Add an explosion
+						AddExplosion(enemies[i].Position);
+						// Play the explosion sound
+						explosionSound.Play();
+						//Add to the player's score
+						score += enemies[i].Value;
+					}
+					enemies.RemoveAt(i);
+				} 
+			}
+		}
+
 		#region Update Region.
 		private void UpdatePlayer(GameTime gameTime)
 		{
@@ -195,35 +290,40 @@ namespace FirstGameProject.Controller
 			player.Position.Y = MathHelper.Clamp(player.Position.Y, 0,GraphicsDevice.Viewport.Height - player.Height);
 
 			// Fire only every interval we set as the fireTime
-			if (gameTime.TotalGameTime - previousFireTime > fireTime)
+			if (gameTime.TotalGameTime - previousLaserFireTime > laserFireTime)
 			{
 				// Reset our current time
-				previousFireTime = gameTime.TotalGameTime;
+				previousLaserFireTime = gameTime.TotalGameTime;
 
 				// Add the projectile, but add it to the front and center of the player
 				AddProjectile(player.Position + new Vector2(player.Width / 2, 0));
-			}
-		}
-		private void UpdateEnemies(GameTime gameTime)
-		{
-			// Spawn a new enemy enemy every 1.5 seconds
-			if (gameTime.TotalGameTime - previousSpawnTime > enemySpawnTime) 
-			{
-				previousSpawnTime = gameTime.TotalGameTime;
 
-				// Add an Enemy
-				AddEnemy();
+				// Play the laser sound
+				laserSound.Play();
 			}
 
-			// Update the Enemies
-			for (int i = enemies.Count - 1; i >= 0; i--) 
+			if(gameTime.TotalGameTime - previousFireballFireTime > fireballFireTime)
 			{
-				enemies[i].Update(gameTime);
-
-				if (enemies[i].Active == false)
+				if(currentKeyboardState.IsKeyDown(Keys.Space))
 				{
-					enemies.RemoveAt(i);
-				} 
+					previousFireballFireTime = gameTime.TotalGameTime;
+
+					AddFireball (player.Position + new Vector2 (player.Width / 2, 0));
+
+					explosionSound.Play ();
+				}
+			}
+			if(currentKeyboardState.IsKeyDown(Keys.LeftShift) || currentKeyboardState.IsKeyDown(Keys.RightShift))
+			{
+				AddBeam(player.Position + new Vector2 (player.Width / 2, 0));
+
+				laserSound.Play();
+			}
+			// reset score if player health goes to zero
+			if (player.Health <= 0)
+			{
+				player.Health = 100;
+				score = 0;
 			}
 		}
 		private void UpdateCollision()
@@ -265,6 +365,71 @@ namespace FirstGameProject.Controller
 				}
 
 			}
+			// Projectile vs Enemy Collision
+			for (int i = 0; i < projectiles.Count; i++)
+			{
+				for (int j = 0; j < enemies.Count; j++)
+				{
+					// Create the rectangles we need to determine if we collided with each other
+					rectangle1 = new Rectangle((int)projectiles[i].Position.X - 
+						projectiles[i].Width / 2,(int)projectiles[i].Position.Y - 
+						projectiles[i].Height / 2,projectiles[i].Width, projectiles[i].Height);
+
+					rectangle2 = new Rectangle((int)enemies[j].Position.X - enemies[j].Width / 2,
+						(int)enemies[j].Position.Y - enemies[j].Height / 2,
+						enemies[j].Width, enemies[j].Height);
+
+					// Determine if the two objects collided with each other
+					if (rectangle1.Intersects(rectangle2))
+					{
+						enemies[j].Health -= projectiles[i].Damage;
+						projectiles[i].Active = false;
+					}
+				}
+			}
+			// Fireballs vs Enemy Collision
+			for(int i = 0; i < fireballs.Count; i++)
+			{
+				for(int j = 0; j < enemies.Count; j++)
+				{
+					//Create the rectangles we need to determine if we collided with each other
+					rectangle1 = new Rectangle ((int)fireballs [i].Position.X -
+					fireballs [i].Width / 2, (int)fireballs [i].Position.Y -
+					fireballs [i].Height / 2, fireballs [i].Width, fireballs [i].Height);
+
+					rectangle2 = new Rectangle((int)enemies[j].Position.X - enemies[j].Width / 2,
+						(int)enemies[j].Position.Y - enemies[j].Height / 2,
+						enemies[j].Width, enemies[j].Height);
+
+					if(rectangle1.Intersects(rectangle2))
+					{
+						enemies [j].Health -= fireballs [i].Damage;
+						fireballs [i].Active = false;
+					}
+				}
+			}
+			// Beams vs Enemy Collision
+			for(int i = 0; i < beams.Count; i++)
+			{
+				for(int j = 0; j < enemies.Count; j++)
+				{
+					//Create the rectangles we need to determine if we collided with each other
+					rectangle1 = new Rectangle ((int)beams [i].Position.X -
+						beams [i].Width / 2, (int)beams [i].Position.Y -
+						beams [i].Height / 2, beams [i].Width, beams [i].Height);
+
+					rectangle2 = new Rectangle((int)enemies[j].Position.X - enemies[j].Width / 2,
+						(int)enemies[j].Position.Y - enemies[j].Height / 2,
+						enemies[j].Width, enemies[j].Height);
+
+					if(rectangle1.Intersects(rectangle2))
+					{
+						enemies [j].Health -= beams [i].Damage;
+						beams [i].Active = false;
+					}
+				}
+			}
+
 		}
 		private void UpdateProjectiles()
 		{
@@ -279,6 +444,46 @@ namespace FirstGameProject.Controller
 				} 
 			}
 		}
+
+		private void UpdateBeams()
+		{
+			for(int i = beams.Count - 1; i >= 0; i--)
+			{
+				beams [i].Update ();
+
+				if(beams[i].Active == false)
+				{
+					beams.RemoveAt (i);
+				}
+			}
+		}
+
+		private void UpdateFireballs()
+		{
+			// Update the Fireballs
+			for (int i = fireballs.Count - 1; i>= 0; i--)
+			{
+				fireballs[i].Update();
+
+				if(fireballs[i].Active == false)
+				{
+					fireballs.RemoveAt(i);
+				}
+			}
+		}
+
+		private void UpdateExplosions(GameTime gameTime)
+		{
+			for (int i = explosions.Count - 1; i >= 0; i--)
+			{
+				explosions[i].Update(gameTime);
+				if (explosions[i].Active == false)
+				{
+					explosions.RemoveAt(i);
+				}
+			}
+		}
+
 		#endregion
 		private void AddEnemy()
 		{ 
@@ -306,6 +511,42 @@ namespace FirstGameProject.Controller
 			Projectile projectile = new Projectile(); 
 			projectile.Initialize(GraphicsDevice.Viewport, projectileTexture,position); 
 			projectiles.Add(projectile);
+		}
+
+		private void AddFireball(Vector2 position)
+		{
+			Fireball fireball = new Fireball();
+			fireball.Initialize (GraphicsDevice.Viewport, fireballTexture, position);
+			fireballs.Add(fireball);
+		}
+
+		private void AddBeam(Vector2 position)
+		{
+			MegaBeam beam = new MegaBeam ();
+			beam.Initialize (GraphicsDevice.Viewport, beamTexture, position);
+			beams.Add (beam);
+		}
+
+		private void AddExplosion(Vector2 position)
+		{
+			Animation explosion = new Animation();
+			explosion.Initialize(explosionTexture,position, 134, 134, 12, 45, Color.White, 1f,false);
+			explosions.Add(explosion);
+		}
+
+		private void PlayMusic(Song song)
+		{
+			// Due to the way the MediaPlayer plays music,
+			// we have to catch the exception. Music will play when the game is not tethered
+			try
+			{
+				// Play the music
+				MediaPlayer.Play(song);
+
+				// Loop the currently playing song
+				MediaPlayer.IsRepeating = true;
+			}
+			catch { }
 		}
 
 		/// <summary>
@@ -337,6 +578,27 @@ namespace FirstGameProject.Controller
 			{
 				projectiles[i].Draw(spriteBatch);
 			}
+
+			for (int i = 0; i < fireballs.Count; i++)
+			{
+				fireballs[i].Draw(spriteBatch);
+			}
+
+			for (int i = 0; i < beams.Count; i++)
+			{
+				beams [i].Draw (spriteBatch);
+			}
+
+			// Draw the explosions
+			for (int i = 0; i < explosions.Count; i++)
+			{
+				explosions[i].Draw(spriteBatch);
+			}
+
+			// Draw the score
+			spriteBatch.DrawString(font, "score: " + score, new Vector2(GraphicsDevice.Viewport.TitleSafeArea.X, GraphicsDevice.Viewport.TitleSafeArea.Y), Color.White);
+			// Draw the player health
+			spriteBatch.DrawString(font, "health: " + player.Health, new Vector2(GraphicsDevice.Viewport.TitleSafeArea.X, GraphicsDevice.Viewport.TitleSafeArea.Y + 30), Color.White);
 
 			// Draw the Player
 			player.Draw(spriteBatch);
